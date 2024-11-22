@@ -1,0 +1,10 @@
+{
+  "domain": "fellerzeptrion",
+  "name": "Feller Zeptrion",
+  "codeowners": ["@CR1N993R"],
+  "config_flow": true,
+  "documentation": "https://github.com/CR1N993R/homeassistant-feller-zeptrion",
+  "iot_class": "local_polling",
+  "version": "1.0.0",
+  "issue_tracker": "https://github.com/CR1N993R/homeassistant-feller-zeptrion/issues"
+}
