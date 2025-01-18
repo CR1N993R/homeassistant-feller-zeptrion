@@ -108,3 +108,10 @@ class FellerZeptrionBlind(CoverEntity):
         self.previous_action = None
         self._attr_is_closed = False
         self.async_write_ha_state()
+
+    async def toggle(self, **kwargs: Any) -> None:
+        """Toggle the cover."""
+        await self._hub.blind_toggle(self._channel_id)
+        self.previous_action = None
+        self._attr_is_closed = False
+        self.async_write_ha_state()

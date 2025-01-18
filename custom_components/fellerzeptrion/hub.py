@@ -12,6 +12,7 @@ COMMAND_ON = "on"
 COMMAND_OFF = "off"
 COMMAND_DIM_UP = "dim_up_200"
 COMMAND_DIM_DOWN = "dim_down_200"
+COMMAND_TOGGLE = "toggle"
 
 BASE_URL = 'http://{host}'
 CHANNEL_DESCRIPTION_ENDPOINT = '/zrap/chdes'
@@ -109,6 +110,9 @@ class FellerZeptrionHub:
     async def blind_close_tilt(self, channel: str):
         """Send the command to the hub to tilt the blind close."""
         await self.__send_command(channel, COMMAND_DIM_DOWN)
+
+    async def blind_toggle(self, channel: str):
+        await self.__send_command(channel, COMMAND_ON)
 
     def parse_channel_state(self, channel: str, channel_states: str):
         """Parse the state of a specific channel from the channel states XML."""
