@@ -15,7 +15,7 @@ PLATFORMS = ["cover", "light"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up My Hub from a config entry."""
+    """Set up Feller Zeptrion integration from a config entry."""
     session = aiohttp.ClientSession()
     hub = FellerZeptrionHub(entry.data["host"], session)
     hass.data.setdefault(DOMAIN, {})
@@ -29,10 +29,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
+    """Unload a config entry and clean up resources."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hub = hass.data[DOMAIN][entry.entry_id]["hub"]
-        await hub.close()  # Close the aiohttp session if needed
+        await hub.close()  # Close the aiohttp session
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok

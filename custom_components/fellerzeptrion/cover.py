@@ -15,7 +15,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-        hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the Feller Zeptrion cover entry."""
     data = hass.data[DOMAIN][entry.entry_id]
@@ -31,10 +33,10 @@ async def async_setup_entry(
 
 
 class FellerZeptrionBlind(CoverEntity):
-    """Implementation of the Cover Entry for Feller Zeptrion."""
+    """Representation of a Feller Zeptrion blind cover."""
 
-    def __init__(self, hub, channel_id, channel_info, network_info) -> None:
-        """Initialize the cover."""
+    def __init__(self, hub: Any, channel_id: str, channel_info: dict, network_info: dict) -> None:
+        """Initialize the cover entity."""
         self._hub = hub
         self._channel_id = channel_info["id"]
         self._channel_info = channel_info
@@ -49,8 +51,7 @@ class FellerZeptrionBlind(CoverEntity):
                 | CoverEntityFeature.OPEN_TILT
                 | CoverEntityFeature.CLOSE_TILT
         )
-
-    previous_action = None
+        self.previous_action: str | None = None
 
     @property
     def name(self) -> str:
@@ -63,8 +64,8 @@ class FellerZeptrionBlind(CoverEntity):
         return self._attr_is_closed
 
     @property
-    def device_info(self) -> DeviceInfo | None:
-        """Return the device info."""
+    def device_info(self) -> DeviceInfo:
+        """Return the device information."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._mac_address)},
             manufacturer="Feller Zeptrion",
@@ -72,46 +73,64 @@ class FellerZeptrionBlind(CoverEntity):
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
-        await self._hub.blind_open(self._channel_id)
-        self.previous_action = "open"
-        self._attr_is_closed = False
+        try:
+            await self._hub.blind_open(self._channel_id)
+            self.previous_action = "open"
+            self._attr_is_closed = False
+        except Exception as err:
+            _LOGGER.error("Error opening cover %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the cover."""
-        await self._hub.blind_close(self._channel_id)
-        self.previous_action = "close"
-        self._attr_is_closed = True
+        try:
+            await self._hub.blind_close(self._channel_id)
+            self.previous_action = "close"
+            self._attr_is_closed = True
+        except Exception as err:
+            _LOGGER.error("Error closing cover %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        """Stop opening or closing of the cover."""
+        """Stop the cover movement."""
         if self.previous_action is None:
             return
-        await self._hub.blind_stop(self._channel_id, self.previous_action)
-        self.previous_action = None
-        self._attr_is_closed = False
+        try:
+            await self._hub.blind_stop(self._channel_id, self.previous_action)
+            self.previous_action = None
+            self._attr_is_closed = False
+        except Exception as err:
+            _LOGGER.error("Error stopping cover %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def async_open_cover_tilt(self, **kwargs: Any) -> None:
-        """Tilt the cover open."""
-        await self._hub.blind_open_tilt(self._channel_id)
-        self.previous_action = None
-        self._attr_is_closed = False
+        """Open the cover tilt."""
+        try:
+            await self._hub.blind_open_tilt(self._channel_id)
+            self.previous_action = None
+            self._attr_is_closed = False
+        except Exception as err:
+            _LOGGER.error("Error opening tilt for cover %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def async_close_cover_tilt(self, **kwargs: Any) -> None:
-        """Tilt the cover close."""
+        """Close the cover tilt."""
         if self.previous_action == "close":
             return
-        await self._hub.blind_close_tilt(self._channel_id)
-        self.previous_action = None
-        self._attr_is_closed = False
+        try:
+            await self._hub.blind_close_tilt(self._channel_id)
+            self.previous_action = None
+            self._attr_is_closed = False
+        except Exception as err:
+            _LOGGER.error("Error closing tilt for cover %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def toggle(self, **kwargs: Any) -> None:
-        """Toggle the cover."""
-        await self._hub.blind_toggle(self._channel_id)
-        self.previous_action = None
-        self._attr_is_closed = False
+        """Toggle the cover state."""
+        try:
+            await self._hub.blind_toggle(self._channel_id)
+            self.previous_action = None
+            self._attr_is_closed = False
+        except Exception as err:
+            _LOGGER.error("Error toggling cover %s: %s", self.name, err)
         self.async_write_ha_state()

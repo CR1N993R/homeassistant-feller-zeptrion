@@ -8,31 +8,27 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 
-from . import FellerZeptrionHub
+from .hub import FellerZeptrionHub
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-host_schema = vol.Schema(
-    {
-        vol.Required("host"): str,
-    }
-)
+HOST_SCHEMA = vol.Schema({vol.Required("host"): str})
 
 
 class MyHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow."""
+    """Handle a config flow for Feller Zeptrion."""
 
     VERSION = 1
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self._device_info = None
-        self._channels = None
-        self._data = {}
+        self._device_info: dict | None = None
+        self._channels: dict | None = None
+        self._data: dict = {}
 
-    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
-        """Handle the first step of the flow: gathering the host."""
+    async def async_step_user(self, user_input: dict | None = None) -> ConfigFlowResult:
+        """Handle the initial step of the flow: gathering the host."""
         errors = {}
         if user_input is not None:
             session = aiohttp.ClientSession(timeout=ClientTimeout(1))
@@ -49,34 +45,36 @@ class MyHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if channel_schema is None:
                     errors = {"host": "Zeptrion hub has no configured channels"}
                 else:
-                    # Store the host and transition to the next step
                     self._data["host"] = user_input["host"]
                     return await self.async_step_channels()
 
-        return self.async_show_form(step_id="user", data_schema=host_schema, errors=errors)
+        return self.async_show_form(step_id="user", data_schema=HOST_SCHEMA, errors=errors)
 
-    async def async_step_channels(self, user_input=None) -> ConfigFlowResult:
-        """Handle the second step of the flow: gathering channel information."""
+    async def async_step_channels(self, user_input: dict | None = None) -> ConfigFlowResult:
+        """Handle the second step of the flow: gathering channel names."""
         errors = {}
         if user_input is not None:
             # Combine the host with the channel data
             entry_data = {**self._data, **user_input}
-            return self.async_create_entry(title=user_input['Hub Name'], data=entry_data)
+            return self.async_create_entry(title=user_input["Hub Name"], data=entry_data)
 
-        # Generate the schema for channel data
         channel_schema = self.get_channel_schema()
         if channel_schema is None:
             return self.async_abort(reason="no_channels")
 
         return self.async_show_form(step_id="channels", data_schema=channel_schema, errors=errors)
 
-    def get_channel_schema(self):
-        """Get the channel schema for the configuration step."""
-        fields = {vol.Required('Hub Name', default=f'Feller Zeptrion Zapp {self._device_info['serial_number']}'): str}
+    def get_channel_schema(self) -> vol.Schema | None:
+        """Generate the schema for channel configuration."""
+        if not self._device_info or not self._channels:
+            return None
+
+        # Fix the f-string quoting issue by using double quotes for nested quotes
+        fields = {
+            vol.Required("Hub Name", default=f'Feller Zeptrion Zapp {self._device_info["serial_number"]}'): str
+        }
         for ch_info in self._channels.values():
             if ch_info["category"] != -1:
-                key = vol.Required(f'Channel {ch_info["id"]} Name', default=ch_info['name'])
+                key = vol.Required(f'Channel {ch_info["id"]} Name', default=ch_info["name"])
                 fields[key] = str
-        if not fields:
-            return None
         return vol.Schema(fields)

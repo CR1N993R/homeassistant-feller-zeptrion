@@ -1,4 +1,4 @@
-"""Constants for the feller-zeptrion integration."""
+"""Constants for the Feller Zeptrion integration."""
 
 DOMAIN = "fellerzeptrion"
 CATEGORY_LIGHT = "1"

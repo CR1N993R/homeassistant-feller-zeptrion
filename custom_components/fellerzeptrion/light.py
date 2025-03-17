@@ -15,10 +15,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-        hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the Feller Zeptrion light entry."""
-
     data = hass.data[DOMAIN][entry.entry_id]
     hub = data["hub"]
     channels = data["channels"]
@@ -28,20 +29,19 @@ async def async_setup_entry(
     for ch_name, ch_info in channels.items():
         if ch_info["category"] == 1:
             lights.append(FellerZeptrionLight(hub, ch_name, ch_info, network_info))
-
     async_add_entities(lights, update_before_add=True)
 
 
 class FellerZeptrionLight(LightEntity):
-    """Implementation of the Light Entry for Feller Zeptrion integration."""
+    """Representation of a Feller Zeptrion light entity."""
 
-    def __init__(self, hub, channel_id, channel_info, network_info) -> None:
-        """Initialize the light."""
+    def __init__(self, hub: Any, channel_id: str, channel_info: dict, network_info: dict) -> None:
+        """Initialize the light entity."""
         self._hub = hub
         self._channel_id = channel_info["id"]
         self._channel_info = channel_info
-        self._mac_address = network_info['mac']
-        self._state = None
+        self._mac_address = network_info["mac"]
+        self._state: bool | None = None
         self._attr_supported_color_modes = {ColorMode.ONOFF}
         self._attr_color_mode = ColorMode.ONOFF
         self._attr_unique_id = f"{channel_info['name']}_{channel_id}_{self._mac_address}"
@@ -58,8 +58,8 @@ class FellerZeptrionLight(LightEntity):
         return self._state
 
     @property
-    def device_info(self) -> DeviceInfo | None:
-        """Return the device info."""
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._mac_address)},
             manufacturer="Feller Zeptrion",
@@ -67,14 +67,20 @@ class FellerZeptrionLight(LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on."""
-        await self._hub.turn_light_on(self._channel_id)
-        await self.async_update()
+        try:
+            await self._hub.turn_light_on(self._channel_id)
+            await self.async_update()
+        except Exception as err:
+            _LOGGER.error("Error turning on light %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self._hub.turn_light_off(self._channel_id)
-        await self.async_update()
+        try:
+            await self._hub.turn_light_off(self._channel_id)
+            await self.async_update()
+        except Exception as err:
+            _LOGGER.error("Error turning off light %s: %s", self.name, err)
         self.async_write_ha_state()
 
     async def async_update(self) -> None:
@@ -82,6 +88,6 @@ class FellerZeptrionLight(LightEntity):
         self._state = await self._hub.get_light_state(self._channel_id)
 
     async def async_added_to_hass(self) -> None:
-        """Update the light state when added to hass."""
+        """Update state when added to Home Assistant."""
         await super().async_added_to_hass()
         await self.async_update()
